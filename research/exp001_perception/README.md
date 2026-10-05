@@ -37,8 +37,12 @@ python -m venv .venv
 .\.venv\Scripts\python.exe research\exp001_perception\bench_holistic.py --fetch-model
 ```
 
-The model bundle (~130 MB) lands in `models/` and is gitignored — we download weights, we do not
-redistribute them.
+The model bundle (**13 MB**, float16) lands in `models/` and is gitignored — we download weights, we
+do not redistribute them.
+
+Verified working on 2026-10-05: mediapipe 0.10.21, opencv 4.11.0, Python 3.12.10, Windows 10.
+Inference on this machine measured **~18 ms p50 per frame at 640×480** on a synthetic clip with no
+subject in frame — that is a plumbing figure, not a result; a real subject costs more.
 
 ## Protocol
 

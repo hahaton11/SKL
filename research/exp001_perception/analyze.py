@@ -213,9 +213,13 @@ def md_table(rows: list[dict]) -> str:
     for r in rows:
         cells = []
         for key, _ in cols:
-            v = r.get(key, "")
+            v = r.get(key, None)
             if key == "tags":
                 v = ", ".join(f"{k}={val}" for k, val in sorted((v or {}).items())) or "-"
+            elif v is None or v == "" or (isinstance(v, float) and math.isnan(v)):
+                # A single-bin run has no decay to report, and an all-absent channel has no
+                # jitter. Render those as "-" so the pasted table does not read as "nan".
+                v = "-"
             cells.append(str(v))
         lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines)

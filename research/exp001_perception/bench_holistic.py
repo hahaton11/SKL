@@ -10,7 +10,7 @@ re-recording it.
 
 Usage
 -----
-    # one-off: download the model bundle (~130 MB) into models/
+    # one-off: download the model bundle (13 MB, float16) into models/
     python bench_holistic.py --fetch-model
 
     # webcam, 60 s, tagged with the condition being swept
