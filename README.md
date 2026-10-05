@@ -31,6 +31,13 @@ That split is a licence boundary, not a style preference — see the rule in `pr
 |---|---|---|
 | **EXP-001** | `research/exp001_perception/` — MediaPipe Holistic Landmarker perception quality, latency, stability | Whether a keypoint pipeline is viable at all. **Can kill ADR-002.** |
 
+| Script | Role |
+|---|---|
+| `calibrate.py` | **live overlay + HUD.** Set up a condition before recording it. Not a measurement tool |
+| `bench_holistic.py` | headless measurement → JSONL. No drawing, because drawing would be measured |
+| `analyze.py` | JSONL → markdown table + failure flags, for pasting into the vault |
+| `make_fixture.py` | synthetic runs so the analysis is verifiable without a camera |
+
 ## Setup
 
 ```powershell

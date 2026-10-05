@@ -44,6 +44,32 @@ Verified working on 2026-10-05: mediapipe 0.10.21, opencv 4.11.0, Python 3.12.10
 Inference on this machine measured **~18 ms p50 per frame at 640×480** on a synthetic clip with no
 subject in frame — that is a plumbing figure, not a result; a real subject costs more.
 
+## Calibrate first — `calibrate.py`
+
+A live overlay view: hand skeletons, shoulder/arm lines, the mouth and eyebrow probes, and a HUD
+with hand/face presence, inference time, a **distance proxy** and a brightness reading, plus
+warnings when a hand leaves frame, the subject is too far, it is too dark, or the face is not
+detected.
+
+```powershell
+$py = ".\.venv\Scripts\python.exe"
+& $py research\exp001_perception\calibrate.py                        # webcam
+& $py research\exp001_perception\calibrate.py --video clip.mp4        # review a phone clip
+& $py research\exp001_perception\calibrate.py --video clip.mp4 --headless   # no window, prints readings
+```
+
+Keys: `q` quit · `SPACE` print readings · `r` reset windows · `o` toggle overlay.
+
+**It is not a measurement tool, and it says so in its own title bar.** Drawing costs frames, so the
+FPS it shows is "landmarker + rendering". Measurements come from `bench_holistic.py`, which stays
+headless for exactly that reason.
+
+### The distance proxy is the point
+
+The HUD shows **shoulder width in normalised units** (pose landmarks 11↔12). Note the value you use
+for each distance tag — "about two metres" is not reproducible between sessions, a shoulder width of
+`0.22` is. Without this, the `distance=` tags in the sweep below are decoration.
+
 ## Protocol
 
 Run each condition for **60 s** of continuous signing, plus one **10-minute** run at
@@ -130,6 +156,36 @@ The fallbacks are listed now so a bad result is a decision, not a crisis.
 | High dropout | any-hand presence < 90% |
 | Throttling | FPS decayed > 20% from first to last bin |
 | Swallowed signs | longest no-hand gap > 300 ms |
+
+## Browser options, for a sanity check with zero setup
+
+Useful to see what the model *can* do before trusting our own plumbing — and to let someone else
+look at it without installing anything.
+
+| Where | What it gives |
+|---|---|
+| [MediaPipe Studio](https://ai.google.dev/edge/mediapipe/solutions/studio) | Google's playground: webcam or uploaded files, per-task settings to tweak, runs in the browser |
+| [mediapipe-samples-web](https://google-ai-edge.github.io/mediapipe-samples-web/) | Live Tasks demos including **Holistic Landmarker** — face, hands and pose together, the exact configuration we use |
+| [source repo](https://github.com/google-ai-edge/mediapipe-samples-web) | The same demos to run locally if we ever want a browser-based review tool |
+
+What they are **not** good for: numbers. Browser WASM/WebGL throughput is a third thing, different
+from both our Python path and an Android app. Use them to check behaviour, never to produce a figure
+for the vault.
+
+## Android emulator — read this before relying on it
+
+The emulator **can** take the PC webcam as the device camera (AVD Manager → Advanced → front/back
+camera → `webcam0`; DirectShow on Windows). That is genuinely useful later for app-level work:
+wiring CameraX, permissions, UI, the frame-source interface.
+
+**It is useless for the numbers we actually need.** Emulator FPS, latency, thermal throttling and
+battery are properties of the host PC and the virtualisation layer, not of a phone — and M2 part 2
+exists specifically to measure those on real hardware. Reported webcam-passthrough quirks
+(resolution changes, long-run crashes, the camera being grabbed by another app) make it worse still
+as a measurement surface.
+
+So: emulator for plumbing, **real mid-tier phone for every performance figure**. The vault's
+reporting rule — latency is always quoted with the hardware it was measured on — applies here.
 
 ## Notes that will save time
 
