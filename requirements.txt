@@ -1,0 +1,4 @@
+# EXP-001 / Baseline 0 — perception benchmark only.
+# Deliberately minimal: no training stack yet. ADR-002 is still PROPOSED.
+mediapipe==0.10.21
+opencv-python>=4.10

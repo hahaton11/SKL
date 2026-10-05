@@ -1,0 +1,26 @@
+# environments
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# model bundles — downloaded, not vendored (and we do not redistribute weights)
+models/
+*.task
+*.tflite
+
+# experiment output — raw runs stay local; only summaries go in the vault
+runs/
+*.jsonl
+
+# recorded video — never commit participant footage. See the vault's Data Collection notes.
+*.mp4
+*.mov
+*.avi
+*.mkv
+
+# os / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
