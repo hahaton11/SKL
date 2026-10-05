@@ -172,6 +172,21 @@ What they are **not** good for: numbers. Browser WASM/WebGL throughput is a thir
 from both our Python path and an Android app. Use them to check behaviour, never to produce a figure
 for the vault.
 
+## If the only phone you have is an iPhone
+
+| Use | Verdict |
+|---|---|
+| **iPhone as a camera** → `bench_holistic.py --source file` | **Do this.** Real phone optics, no Mac, no app. First set iOS Camera → Formats → **Most Compatible** (H.264), or OpenCV may fail on HEVC — otherwise transcode with ffmpeg. Gives landmark **quality** |
+| **iPhone Safari** + MediaPipe web | ⚠ Google's own web examples sit at **~6–7 FPS on iPhone 11 / 12 Pro Max / 13 Pro** while running well on Android ([mediapipe#3303](https://github.com/google/mediapipe/issues/3303)). Also: iOS Safari only grants camera access over **HTTPS or localhost**, so a plain-HTTP LAN page silently has no camera |
+| **Native iOS app** | Needs Xcode, which needs macOS. Blocked without a Mac |
+
+> ⚠ **A ~6 FPS Safari number does not refute ADR-002.** It measures Safari's WASM runtime. No
+> browser or emulator figure may accept or reject an architecture decision.
+
+For performance figures the answer is a **cheap or borrowed mid-tier Android phone**. That is not a
+compromise: Kazakhstan's market is Android-dominant, so Android is the product target regardless of
+which phone the developer owns.
+
 ## Android emulator — read this before relying on it
 
 The emulator **can** take the PC webcam as the device camera (AVD Manager → Advanced → front/back
