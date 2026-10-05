@@ -37,6 +37,34 @@ def pct(xs: list[float], q: float) -> float:
     return s[lo] if lo == hi else s[lo] + (s[hi] - s[lo]) * (k - lo)
 
 
+def expand(patterns: list[str]) -> list[Path]:
+    """Resolve path arguments, expanding globs ourselves.
+
+    PowerShell does not glob-expand arguments to native commands, so the documented
+    `analyze.py runs\\*.jsonl` would otherwise arrive as a literal and find nothing.
+    """
+    out: list[Path] = []
+    for raw in patterns:
+        p = Path(raw)
+        if any(ch in raw for ch in "*?["):
+            base = p.parent if str(p.parent) else Path(".")
+            matches = sorted(base.glob(p.name))
+            if not matches:
+                print(f"no match: {raw}")
+            out.extend(matches)
+        else:
+            out.append(p)
+    # de-duplicate while preserving order
+    seen: set[Path] = set()
+    unique = []
+    for p in out:
+        rp = p.resolve()
+        if rp not in seen:
+            seen.add(rp)
+            unique.append(p)
+    return unique
+
+
 def load(path: Path) -> tuple[dict, list[dict]]:
     meta: dict = {}
     frames: list[dict] = []
@@ -71,14 +99,34 @@ def jitter_px_equiv(frames: list[dict], probe: str, window: int = 15) -> float:
     return stats.median(windows) if windows else float("nan")
 
 
-def fps_series(frames: list[dict], bin_s: float = 30.0) -> list[tuple[float, float]]:
-    """Loop FPS per time bin -- the decay check. Returns [(bin_start_s, fps)]."""
+def fps_series(
+    frames: list[dict], bin_s: float = 30.0, min_coverage: float = 0.5
+) -> list[tuple[float, float]]:
+    """Loop FPS per time bin -- the decay check. Returns [(bin_start_s, fps)].
+
+    A run rarely ends on a bin boundary, and a partial final bin divided by the full bin width
+    reads as a huge FPS drop. That produced a false throttling flag on a perfectly flat run, so
+    each bin is divided by the time it actually covers and bins covering less than
+    `min_coverage` of the window are dropped rather than reported.
+    """
     if not frames:
         return []
-    bins: dict[int, int] = {}
+    counts: dict[int, int] = {}
     for f in frames:
-        bins[int(f["wall_s"] // bin_s)] = bins.get(int(f["wall_s"] // bin_s), 0) + 1
-    return [(b * bin_s, n / bin_s) for b, n in sorted(bins.items())]
+        counts[int(f["wall_s"] // bin_s)] = counts.get(int(f["wall_s"] // bin_s), 0) + 1
+
+    end = frames[-1]["wall_s"]
+    start = frames[0]["wall_s"]
+    series: list[tuple[float, float]] = []
+    for b, n in sorted(counts.items()):
+        lo, hi = b * bin_s, (b + 1) * bin_s
+        covered = min(hi, end) - max(lo, start)
+        if covered <= 0:
+            continue
+        if covered < min_coverage * bin_s and (b == max(counts) or b == min(counts)):
+            continue  # partial bin at either edge -- not comparable, so not reported
+        series.append((lo, n / covered))
+    return series
 
 
 def summarise(meta: dict, frames: list[dict]) -> dict:
@@ -195,12 +243,12 @@ def verdict(rows: list[dict]) -> list[str]:
 
 def main() -> int:
     p = argparse.ArgumentParser(description="Summarise EXP-001 runs")
-    p.add_argument("runs", nargs="+", type=Path)
+    p.add_argument("runs", nargs="+", help="run .jsonl paths; globs are expanded by this script")
     p.add_argument("--verbose", action="store_true", help="also print the per-bin FPS series")
     args = p.parse_args()
 
     rows = []
-    for path in args.runs:
+    for path in expand(args.runs):
         if not path.exists():
             print(f"skip (missing): {path}")
             continue

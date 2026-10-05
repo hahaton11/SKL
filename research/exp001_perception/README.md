@@ -84,6 +84,19 @@ $b  = "research\exp001_perception\bench_holistic.py"
 `analyze.py` prints a markdown table and a **Flags** section. Paste both into the vault's
 `04_Experiments/Baselines/EXP-001 — Baseline 0 Perception.md`.
 
+### Validating the analysis without a camera
+
+```powershell
+python research\exp001_perception\make_fixture.py runs\fixtures
+python research\exp001_perception\analyze.py runs\fixtures\*.jsonl --verbose
+```
+
+Expected: no flags for `fixture=good`, dropout **and** swallowed-sign flags for `fixture=fast`,
+a throttling flag for `fixture=throttled`. If that does not hold, the analysis is broken, not the
+camera. Writing these fixtures caught two real bugs before any measurement was taken — PowerShell
+not expanding globs for native commands, and a partial final time bin reading as a catastrophic
+FPS drop (a false throttling flag on a flat run).
+
 ### Sign faster than feels natural, on purpose
 
 The documented weak spot of keypoint methods is **fast and complex gestures** — the Applied Sciences
